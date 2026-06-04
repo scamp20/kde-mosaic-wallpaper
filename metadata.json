@@ -1,4 +1,5 @@
 {
+  "KPackageStructure": "Plasma/Wallpaper",
   "KPlugin": {
     "Id": "huangjin.mosaic",
     "Name": "Huangjin Mosaic",
@@ -10,5 +11,6 @@
         "Name": "huangjin"
       }
     ]
-  }
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
 }

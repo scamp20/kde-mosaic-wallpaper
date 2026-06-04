@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtGraphicalEffects 1.0
+import QtQuick
+import Qt5Compat.GraphicalEffects
 
 // One tile: two HuangjinPhoto layers that crossfade into each other, with
 // rounded corners via a mask. The tile asks the controller for the photo whose

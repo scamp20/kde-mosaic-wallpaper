@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import Qt.labs.folderlistmodel 2.12
+import QtQuick
+import Qt.labs.folderlistmodel
 
 // Native photo-mosaic wallpaper (no web view):
 //  - discovers the photos in the photos/ folder
@@ -146,6 +146,15 @@ Rectangle {
         onStatusChanged: if (status === FolderListModel.Ready) mosaic.onPhotosFound()
     }
 
+    // FolderListModel's URL role was renamed fileURL -> fileUrl in Qt 6; try
+    // both (and filePath as a last resort) so this works regardless.
+    function fileUrlAt(i) {
+        var u = photos.get(i, "fileUrl");
+        if (u === undefined) u = photos.get(i, "fileURL");
+        if (u === undefined) u = photos.get(i, "filePath");
+        return "" + u;
+    }
+
     function onPhotosFound() {
         if (discovered || photos.count === 0)
             return;
@@ -153,7 +162,7 @@ Rectangle {
 
         var list = [];
         for (var i = 0; i < photos.count; i++)
-            list.push("" + photos.get(i, "fileURL"));
+            list.push(fileUrlAt(i));
         allPhotos = list;
 
         currentLayout = Math.floor(Math.random() * layouts.length);

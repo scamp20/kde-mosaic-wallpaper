@@ -17,15 +17,23 @@ quietly crossfade to new photos, and the whole grid re-arranges itself every
 
 ---
 
+> **You are on the `plasma6` branch** — the Plasma 6 / Qt 6 port. For Plasma 5,
+> use the `main` branch instead.
+
 ## Requirements
 
-- **KDE Plasma 5** (Plasma 5.27 tested), on **Linux**.
-- Qt 5 with the `QtGraphicalEffects` and `Qt.labs.folderlistmodel` QML modules
-  (these ship with a standard Plasma desktop).
+- **KDE Plasma 6**, on **Linux**.
+- Qt 6 with the `Qt5Compat.GraphicalEffects` QML module (provides the blur and
+  rounded-corner mask). On most distros it's in a package such as
+  `qt6-5compat` / `qt6-qt5compat` / `qml6-module-qt5compat-graphicaleffects`,
+  and is normally already present on a full Plasma 6 install. If the wallpaper
+  loads but photos show no rounded corners / no blurred backdrop, install that
+  package.
 
-This is the **Plasma 5** version, on the `main` branch. For **Plasma 6** there
-is a port on the [`plasma6` branch](#platform-support) — clone that branch
-instead (see below).
+> **Heads-up:** this Plasma 6 port is a best-effort translation of the Plasma 5
+> version and hasn't been runtime-tested on Plasma 6 yet. If something looks
+> off, please open an issue — the Plasma 5 version (`main` branch) is the
+> tested one.
 
 ---
 
@@ -71,7 +79,7 @@ If you just changed the code (or it doesn't show up), Plasma caches compiled QML
 reload the shell:
 
 ```bash
-kquitapp5 plasmashell && kstart5 plasmashell
+kquitapp6 plasmashell && kstart plasmashell
 ```
 
 ---

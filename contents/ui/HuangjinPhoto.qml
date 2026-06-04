@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtGraphicalEffects 1.0
+import QtQuick
+import Qt5Compat.GraphicalEffects
 
 // One photo: a blurred, filled ("cover") background behind the whole photo
 // (never cropped, "contain"). The blur fills any side bands.
