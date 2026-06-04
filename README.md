@@ -23,8 +23,9 @@ quietly crossfade to new photos, and the whole grid re-arranges itself every
 - Qt 5 with the `QtGraphicalEffects` and `Qt.labs.folderlistmodel` QML modules
   (these ship with a standard Plasma desktop).
 
-This is a **Plasma 5** plugin and will **not** load unchanged on **Plasma 6**
-(Qt 6 removed `QtGraphicalEffects`). See [Platform support](#platform-support).
+This is the **Plasma 5** version, on the `main` branch. For **Plasma 6** there
+is a port on the [`plasma6` branch](#platform-support) — clone that branch
+instead (see below).
 
 ---
 
@@ -34,7 +35,11 @@ Plasma loads wallpaper plugins from `~/.local/share/plasma/wallpapers/`, and the
 folder name **must match** the plugin id (`huangjin.mosaic`).
 
 ```bash
+# Plasma 5:
 git clone <your-repo-url> ~/.local/share/plasma/wallpapers/huangjin.mosaic
+
+# Plasma 6 (use the plasma6 branch):
+git clone -b plasma6 <your-repo-url> ~/.local/share/plasma/wallpapers/huangjin.mosaic
 ```
 
 (If you download a zip instead, just make sure the final folder is named
@@ -126,8 +131,8 @@ rm -rf ~/.local/share/plasma/wallpapers/huangjin.mosaic
 
 | Platform | Works? |
 |----------|--------|
-| Linux + **KDE Plasma 5** (Kubuntu, Fedora KDE, openSUSE, Arch, etc.) | ✅ Yes |
-| Linux + **KDE Plasma 6** | ⚠️ Needs porting (Qt 6 dropped `QtGraphicalEffects`; some imports change) |
+| Linux + **KDE Plasma 5** (Kubuntu, Fedora KDE, openSUSE, Arch, etc.) | ✅ Yes — `main` branch |
+| Linux + **KDE Plasma 6** | ✅ Yes — `plasma6` branch (see [Install](#install)) |
 | Other Linux desktops (GNOME, XFCE…) | ❌ No — this is a Plasma wallpaper plugin |
 | Windows / macOS | ❌ No |
 
