@@ -44,10 +44,10 @@ folder name **must match** the plugin id (`huangjin.mosaic`).
 
 ```bash
 # Plasma 5:
-git clone <your-repo-url> ~/.local/share/plasma/wallpapers/huangjin.mosaic
+git clone https://github.com/scamp20/kde-mosaic-wallpaper ~/.local/share/plasma/wallpapers/huangjin.mosaic
 
 # Plasma 6 (use the plasma6 branch):
-git clone -b plasma6 <your-repo-url> ~/.local/share/plasma/wallpapers/huangjin.mosaic
+git clone -b plasma6 https://github.com/scamp20/kde-mosaic-wallpaper ~/.local/share/plasma/wallpapers/huangjin.mosaic
 ```
 
 (If you download a zip instead, just make sure the final folder is named
