@@ -1,0 +1,14 @@
+# Photos are personal — every user supplies their own (see README).
+# The folder is kept (via .gitkeep) but its contents are never committed.
+contents/photos/*
+!contents/photos/.gitkeep
+
+# Backups / archives
+*.tar.gz
+*.zip
+
+# Tooling / editor / OS cruft
+.claude/
+*.swp
+*~
+.DS_Store

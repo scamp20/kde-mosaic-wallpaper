@@ -1,0 +1,14 @@
+{
+  "KPlugin": {
+    "Id": "huangjin.mosaic",
+    "Name": "Huangjin Mosaic",
+    "Description": "Animated photo mosaic wallpaper that fits each photo to a matching frame",
+    "Version": "2.0",
+    "License": "MIT",
+    "Authors": [
+      {
+        "Name": "huangjin"
+      }
+    ]
+  }
+}
