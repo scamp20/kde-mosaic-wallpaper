@@ -25,9 +25,18 @@ Rectangle {
     // Each photo changes roughly every 4s.
     property int swapMin: 3800
     property int swapMax: 4800
-    // Full re-arrange into a different layout (every 8-12 min).
-    property int layoutMin: 480000
-    property int layoutMax: 720000
+    // Upper bound on how long one layout stays up. A layout usually changes
+    // sooner than this, on its own: see shownUrls. This is only the cap, for
+    // layouts broad enough that they'd otherwise run for a quarter of an hour.
+    property int layoutMin: 300000
+    property int layoutMax: 420000
+    // Floor on a layout's life, so a small photo library (which can run a layout
+    // out of fresh photos in seconds) can't turn into a slideshow of layouts.
+    property int layoutMinDwell: 60000
+    // How far a photo's aspect ratio may sit from its frame's before the photo
+    // counts as a poor fit (visible blur bands). Also decides when a layout has
+    // run out of fresh photos that suit it - see pickPhoto.
+    property real fitTolerance: 0.22
 
     // ---- Layouts ----
     // A layout is a list of cells; a cell is a rectangle {x, y, w, h} in [0..1]
@@ -111,14 +120,28 @@ Rectangle {
     // ---- Photos (with measured aspect ratio) ----
     property var allPhotos: []     // urls only (fallback before measuring)
     property var infos: []         // [{url, r}] once measured (r = width / height)
-    property var usedUrls: []
+    property var usedUrls: []      // on screen right now
+    property var shownUrls: []     // shown at any point during this layout session
     property bool classified: false
 
-    // Picks a photo for a frame of the given aspect ratio, balancing fit and
-    // randomness: among photos that fit the frame about equally well it chooses
-    // at random, so (e.g.) the 180+ 3:4 portraits all get their turn rather than
-    // the same few showing every time. Avoids the current photo and any already
-    // shown elsewhere (including in a grid being preloaded).
+    // Picks a photo for a frame of the given aspect ratio.
+    //
+    // No photo repeats while a layout is up: a photo goes into shownUrls the
+    // moment it is chosen, and shownUrls is only cleared when the layout
+    // changes. So a layout session works its way through distinct photos rather
+    // than picking with replacement, which is what stops the same few favourites
+    // recurring and gives the rest of the library a turn.
+    //
+    // That also means a layout lasts as long as it has fresh photos suiting its
+    // frames, which varies by layout: a wall of portraits can draw on 200 of
+    // them, while a layout full of square frames exhausts the ~25 square photos
+    // quickly and moves on sooner. When a frame can no longer be filled with a
+    // fresh, well-fitting photo, the layout has nothing new left to show and we
+    // ask for a re-arrange.
+    //
+    // Among photos that fit about equally well the choice is random: the library
+    // is full of exact ties (180+ photos are exactly 3:4), so a plain sort would
+    // otherwise keep returning the same ones.
     function pickPhoto(targetRatio, currentUrl) {
         var pool = infos;
         if (!pool || pool.length === 0) {
@@ -127,32 +150,53 @@ Rectangle {
             return allPhotos[Math.floor(Math.random() * allPhotos.length)];
         }
 
-        var cands = [];
-        var i;
-        for (i = 0; i < pool.length; i++)
-            if (pool[i].url !== currentUrl && usedUrls.indexOf(pool[i].url) < 0)
-                cands.push(pool[i]);
-        if (cands.length === 0)
-            for (i = 0; i < pool.length; i++)
-                if (pool[i].url !== currentUrl)
-                    cands.push(pool[i]);
-        if (cands.length === 0)
-            cands = pool.slice();
-
-        // Shuffle first, so that photos which fit equally well (many share the
-        // exact same shape, e.g. 3:4) end up in random order...
-        for (i = cands.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var tmp = cands[i]; cands[i] = cands[j]; cands[j] = tmp;
-        }
-        // ...then prefer the closest-fitting ones. Ties keep their shuffled
-        // (random) order, so the choice among good fits is genuinely random.
         var t = targetRatio > 0 ? targetRatio : 1.0;
-        cands.sort(function (a, b) {
+        var isSwap = currentUrl !== "";
+        var i, j, tmp;
+
+        // Fresh = not yet shown in this layout session, and not on screen now
+        // (usedUrls also covers a grid being preloaded, so the incoming layout
+        // can't duplicate the outgoing one mid-crossfade).
+        var fresh = [];
+        for (i = 0; i < pool.length; i++) {
+            var u = pool[i].url;
+            if (u !== currentUrl && shownUrls.indexOf(u) < 0 && usedUrls.indexOf(u) < 0)
+                fresh.push(pool[i]);
+        }
+
+        // Shuffle first, so equally-good fits end up in random order...
+        for (i = fresh.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            tmp = fresh[i]; fresh[i] = fresh[j]; fresh[j] = tmp;
+        }
+        // ...then prefer the closest fits. Ties keep their shuffled (random)
+        // order, so the choice among equally good fits is genuinely random.
+        fresh.sort(function (a, b) {
             return Math.abs(a.r - t) - Math.abs(b.r - t);
         });
-        var k = Math.min(cands.length, 10);
-        return cands[Math.floor(Math.random() * k)].url;
+
+        // Nothing fresh left that suits this frame: the layout is spent.
+        if (fresh.length === 0 || Math.abs(fresh[0].r - t) / t > fitTolerance) {
+            if (isSwap && requestRelayout())
+                // Hold the photo we have rather than drop in a blurry or repeated
+                // one: the layout is changing anyway.
+                return "";
+            if (isSwap && shownUrls.length > 0) {
+                // Spent, but we can't re-arrange (it's disabled, one is already
+                // running, or this layout only just went up). Let the library come
+                // round again so the photos at least keep moving.
+                shownUrls = [];
+                return pickPhoto(targetRatio, currentUrl);
+            }
+            // Filling a new grid: show the best there is rather than an empty frame.
+        }
+        if (fresh.length === 0)
+            return "";
+
+        var k = Math.min(fresh.length, 10);
+        var url = fresh[Math.floor(Math.random() * k)].url;
+        shownUrls.push(url);
+        return url;
     }
 
     function reserve(newUrl, oldUrl) {
@@ -287,14 +331,49 @@ Rectangle {
 
     property var liveGrid: null        // the grid currently on screen
     property var incomingGrid: null    // a grid being preloaded for the next layout
+    // Guards the whole re-arrange, from "decide to change" to "crossfade done".
+    // It must be set before the incoming grid is built, because building it calls
+    // pickPhoto, which can itself ask for a re-arrange - and incomingGrid isn't
+    // assigned until createObject returns, so it can't be the guard.
+    property bool transitioning: false
+    property double sessionStart: 0    // Date.now() when the live layout went up
+
+    // Asked for when a layout has no fresh, well-fitting photos left to show.
+    // Returns whether a re-arrange is actually starting: the caller needs to know,
+    // because if not, it has to find that frame a photo some other way.
+    function requestRelayout() {
+        if (transitioning || !relayoutEnabled)
+            return false;
+        // A small library can exhaust a layout in seconds; don't let that turn
+        // into a slideshow of layouts.
+        if (Date.now() - sessionStart < layoutMinDwell)
+            return false;
+        startTransition();
+        rearmLayoutTimer();            // the cap starts again with the new layout
+        return true;
+    }
+
+    function rearmLayoutTimer() {
+        layoutTimer.interval = layoutMin + Math.random() * (layoutMax - layoutMin);
+        layoutTimer.restart();
+    }
 
     // Starts a re-arrange. The next layout's grid is created straight away but
     // invisible, so its photos are picked and decoded while the current layout is
     // still on screen. Only when it reports itself fully loaded do we crossfade,
     // so a layout change never shows empty frames or pop-in.
     function startTransition() {
-        if (incomingGrid !== null)
+        if (transitioning)
             return;                    // one is already in flight
+        transitioning = true;
+
+        // Stop the outgoing grid swapping photos while the next one loads, so it
+        // can't consume the new session's pool on its way out.
+        if (liveGrid !== null)
+            liveGrid.live = false;
+
+        // A new session: the whole library is available again.
+        shownUrls = [];
 
         var idx = 0;
         if (layouts.length > 1)
@@ -302,16 +381,20 @@ Rectangle {
             while (idx === currentLayout);
 
         var g = gridComponent.createObject(stage, { layout: layouts[idx], nextIndex: idx });
-        if (g === null)
+        if (g === null) {
+            transitioning = false;
             return;
+        }
         incomingGrid = g;
         g.ready.connect(finishTransition);
         preloadTimeout.restart();
     }
 
     function finishTransition() {
-        if (incomingGrid === null)
+        if (incomingGrid === null) {
+            transitioning = false;
             return;
+        }
         preloadTimeout.stop();
 
         var next = incomingGrid;
@@ -330,6 +413,9 @@ Rectangle {
             // Destroy once faded out; its tiles then release their photos.
             old.destroy(1400);
         }
+
+        sessionStart = Date.now();     // this layout's no-repeat session begins now
+        transitioning = false;
     }
 
     // ---- Timers ----
@@ -359,6 +445,8 @@ Rectangle {
         repeat: false
         onTriggered: if (mosaic.incomingGrid !== null) mosaic.incomingGrid.forceReady()
     }
+    // The cap: a layout that still has fresh photos left after this long gets
+    // re-arranged anyway. Layouts that run out sooner change sooner, on their own.
     Timer {
         id: layoutTimer
         interval: mosaic.layoutMin + Math.random() * (mosaic.layoutMax - mosaic.layoutMin)

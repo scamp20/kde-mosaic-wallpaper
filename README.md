@@ -3,14 +3,16 @@
 A lightweight **KDE Plasma** wallpaper that turns a folder of your own photos
 into a living mosaic. Photos are sorted by shape and dropped into matching
 frames so nothing gets cropped, each one slowly pans/zooms (Ken Burns), they
-quietly crossfade to new photos, and the whole grid re-arranges itself into a
-different layout every 8–12 minutes.
+quietly crossfade to new photos, and the grid periodically re-arranges itself
+into a different layout.
 
 - 📐 **Shape-aware** — every frame is filled with the photo that fits it best, so there's minimal blurred space.
 - 🖼️ **Never crops your subjects** — the whole photo is always shown; gaps are filled with a soft blurred version of the same image.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
 - 🔀 **Nine layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts and staircases.
+- 🚫 **No repeats** — a photo is never shown twice while a layout is up, so a session works through *distinct* photos instead of recycling the same favourites.
+- ⏳ **Self-timed** — a layout stays up for as long as it has fresh photos that suit its frames, so its length varies: a wall of portraits can draw on hundreds and runs to the cap, while a layout of square frames exhausts the few square photos and moves on early.
 - ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
 
 > **Note:** It uses your photos, not the ones in this repo. The `photos/` folder
@@ -88,9 +90,20 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Gap between photos | `property int gap` | `12` |
 | Corner rounding | `property real cornerRadius` | `22` |
 | How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 4 s |
-| How often the whole grid re-arranges | `layoutMin` / `layoutMax` (ms) | every 8–12 min |
+| Longest a layout may stay up | `layoutMin` / `layoutMax` (ms) | 5–7 min (a *cap*, see below) |
+| Shortest a layout may stay up | `layoutMinDwell` (ms) | 1 min |
+| When a photo counts as a poor fit | `fitTolerance` | `0.22` (22% off the frame's ratio) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
 | The frame layouts | `property var layouts` | 9 layouts (see below) |
+
+**How long a layout lasts.** No photo repeats while a layout is up. So a layout
+runs until it can no longer fill one of its frames with a photo that is both
+fresh and a decent fit (`fitTolerance`) — then it re-arranges. That makes its
+length depend on how much of *your* library suits its frames, which is the point:
+it stops common shapes hogging the screen and gives rarer ones a turn.
+`layoutMin`/`layoutMax` are only the **upper bound**, for layouts broad enough to
+otherwise run for a quarter of an hour. With the author's library the spread is
+roughly 2.5–7 minutes.
 
 - **Motion:** the Ken Burns zoom/pan lives in
   [`contents/ui/HuangjinPhoto.qml`](contents/ui/HuangjinPhoto.qml). To make it
