@@ -22,9 +22,11 @@ Rectangle {
     // ---- Settings ----
     property int gap: 12
     property real cornerRadius: 22
-    // Each photo changes roughly every 4s.
-    property int swapMin: 3800
-    property int swapMax: 4800
+    // One photo changes roughly every 6s. This is the gap between swaps, not how
+    // long a photo lasts: with several frames taking turns, and the oldest usually
+    // going first, a photo actually stays up for the best part of a minute.
+    property int swapMin: 5800
+    property int swapMax: 6800
     // The grid re-arranges into a different layout every five minutes, flat.
     property int layoutInterval: 300000
     // How far a photo's aspect ratio may sit from its frame's and still count as

@@ -90,7 +90,7 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Background color | `gradient` stops | warm greige `#9C9388 → #6E665C` |
 | Gap between photos | `property int gap` | `12` |
 | Corner rounding | `property real cornerRadius` | `22` |
-| How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 4 s |
+| How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 6 s |
 | How often the layout changes | `layoutInterval` (ms) | every 5 min |
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
 | How strongly the next layout must differ | `freshnessBias` | `2.0` (0 = ignore, higher = more contrast) |
