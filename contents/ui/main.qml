@@ -33,10 +33,10 @@ Rectangle {
     // Floor on a layout's life, so a small photo library (which can run a layout
     // out of fresh photos in seconds) can't turn into a slideshow of layouts.
     property int layoutMinDwell: 60000
-    // How far a photo's aspect ratio may sit from its frame's before the photo
-    // counts as a poor fit (visible blur bands). Also decides when a layout has
-    // run out of fresh photos that suit it - see pickPhoto.
-    property real fitTolerance: 0.22
+    // How far a photo's aspect ratio may sit from its frame's and still count as
+    // a fit. This is the single knob behind both which photos a frame will draw
+    // on and when a layout has run out of them - see pickPhoto.
+    property real fitTolerance: 0.18
 
     // ---- Layouts ----
     // A layout is a list of cells; a cell is a rectangle {x, y, w, h} in [0..1]
@@ -193,8 +193,22 @@ Rectangle {
         if (fresh.length === 0)
             return "";
 
-        var k = Math.min(fresh.length, 10);
-        var url = fresh[Math.floor(Math.random() * k)].url;
+        // Every fresh photo that fits this frame acceptably is an equal candidate
+        // - deliberately not just the N closest. A fixed top-N window looks fair
+        // but isn't: 189 photos here are *exactly* 3:4, so they occupy the window
+        // permanently, and shapes that suit the frame perfectly well but less
+        // exactly (the 2:3 camera portraits) rank just outside it and are never
+        // shown at all, however long the wallpaper runs.
+        var band = [];
+        for (i = 0; i < fresh.length; i++) {
+            if (Math.abs(fresh[i].r - t) / t > fitTolerance)
+                break;             // sorted by fit: nothing after this qualifies
+            band.push(fresh[i]);
+        }
+        if (band.length === 0)
+            band = [fresh[0]];     // nothing suits it: the closest there is
+
+        var url = band[Math.floor(Math.random() * band.length)].url;
         shownUrls.push(url);
         return url;
     }

@@ -92,18 +92,26 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 4 s |
 | Longest a layout may stay up | `layoutMin` / `layoutMax` (ms) | 5–7 min (a *cap*, see below) |
 | Shortest a layout may stay up | `layoutMinDwell` (ms) | 1 min |
-| When a photo counts as a poor fit | `fitTolerance` | `0.22` (22% off the frame's ratio) |
+| When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
 | The frame layouts | `property var layouts` | 9 layouts (see below) |
 
+**How a photo is chosen.** A frame draws, at random and with equal chance, from
+*every* photo whose aspect ratio is within `fitTolerance` of its own — not from
+the N closest. That distinction matters more than it looks. Photo libraries are
+full of exact ties (189 of the author's are *precisely* 3:4), and a fixed
+"closest N" window is permanently occupied by them, so a 2:3 camera portrait —
+which suits a 3:4 frame perfectly well — ranks just outside the window and is
+**never shown, ever**. Widening `fitTolerance` lets more shapes into each frame at
+the cost of a little more blur; tightening it does the reverse.
+
 **How long a layout lasts.** No photo repeats while a layout is up. So a layout
 runs until it can no longer fill one of its frames with a photo that is both
-fresh and a decent fit (`fitTolerance`) — then it re-arranges. That makes its
-length depend on how much of *your* library suits its frames, which is the point:
-it stops common shapes hogging the screen and gives rarer ones a turn.
-`layoutMin`/`layoutMax` are only the **upper bound**, for layouts broad enough to
-otherwise run for a quarter of an hour. With the author's library the spread is
-roughly 2.5–7 minutes.
+fresh and a fit — then it re-arranges. That makes its length depend on how much of
+*your* library suits its frames, which is the point: it stops common shapes
+hogging the screen and gives rarer ones a turn. `layoutMin`/`layoutMax` are only
+the **upper bound**, for layouts broad enough to otherwise run for a quarter of an
+hour. With the author's library the spread is roughly 2.5–7 minutes.
 
 - **Motion:** the Ken Burns zoom/pan lives in
   [`contents/ui/HuangjinPhoto.qml`](contents/ui/HuangjinPhoto.qml). To make it
