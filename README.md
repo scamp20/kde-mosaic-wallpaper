@@ -3,14 +3,15 @@
 A lightweight **KDE Plasma** wallpaper that turns a folder of your own photos
 into a living mosaic. Photos are sorted by shape and dropped into matching
 frames so nothing gets cropped, each one slowly pans/zooms (Ken Burns), they
-quietly crossfade to new photos, and the whole grid re-arranges itself every
-20–30 minutes.
+quietly crossfade to new photos, and the whole grid re-arranges itself into a
+different layout every 8–12 minutes.
 
 - 📐 **Shape-aware** — every frame is filled with the photo that fits it best, so there's minimal blurred space.
 - 🖼️ **Never crops your subjects** — the whole photo is always shown; gaps are filled with a soft blurred version of the same image.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
-- 🔀 **Self-shuffling** — a balanced layout with a featured center "hero" photo that changes shape and re-arranges over time.
+- 🔀 **Nine layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts and staircases.
+- ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
 
 > **Note:** It uses your photos, not the ones in this repo. The `photos/` folder
 > is intentionally empty here — you add your own (see below).
@@ -87,9 +88,9 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Gap between photos | `property int gap` | `12` |
 | Corner rounding | `property real cornerRadius` | `22` |
 | How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 4 s |
-| How often the whole grid re-arranges | `layoutMin` / `layoutMax` (ms) | every 20–30 min |
+| How often the whole grid re-arranges | `layoutMin` / `layoutMax` (ms) | every 8–12 min |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
-| The frame layouts | `property var layouts` | 4 portrait-leaning layouts |
+| The frame layouts | `property var layouts` | 9 layouts (see below) |
 
 - **Motion:** the Ken Burns zoom/pan lives in
   [`contents/ui/HuangjinPhoto.qml`](contents/ui/HuangjinPhoto.qml). To make it
@@ -100,24 +101,37 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 
 ### Tuning it for *your* photos and screen
 
-The bundled layouts were authored for a **16:10** screen (1920×1200) and a photo
-collection that's **mostly 3:4 portraits**. It still works on any screen and any
-mix of photos — the shape-matching keeps blur low — but the *arrangement* looks
-its best when the layouts match your situation.
+The bundled layouts were authored for a **16:10** screen (1920×1200) and a
+library that's mostly **3:4 portraits** with a good number of **4:3 landscapes**.
 
-If your library leans landscape, or your screen is 16:9 / ultrawide / a different
-shape, you can adjust the `layouts` array. The easy way: **paste
-`contents/ui/main.qml` into an AI assistant** (ChatGPT, Claude, etc.) and ask
-something like:
+There's one rule that matters far more than the rest:
+
+> **A frame must be shaped like a photo you actually own.**
+
+A cell's `{w, h}` is *not* its shape. On a 16:10 screen the frame's aspect ratio
+is `w * 1.6 / h` (in general, `w / h * screen_width / screen_height`). So a
+"square-looking" cell of `w:0.5, h:0.5` is really a **1.6:1** frame — and if you
+own no 1.6:1 photos, it can only ever be filled with blur, no matter how good the
+shape-matching is. Frames are sized so that ratio lands on shapes the library
+actually contains (0.75, 1.0, 1.33, 1.5).
+
+Measure your own library first:
+
+```bash
+identify -format "%w %h\n" contents/photos/* \
+  | awk '{ printf "%.2f\n", $1/$2 }' | sort -n | uniq -c | sort -rn | head
+```
+
+Then **paste `contents/ui/main.qml` into an AI assistant** (ChatGPT, Claude, …)
+and ask for layouts tuned to what you found:
 
 > "This is a KDE Plasma QML photo-mosaic wallpaper. The `layouts` array holds
-> mosaic layouts as cells `{x, y, w, h}` in 0–1 fractions of the screen. My
-> screen is **1920×1080 (16:9)** and most of my photos are **landscape**.
-> Rewrite the `layouts` to be landscape-dominant and tuned to my screen, keeping
-> a featured center hero."
-
-Each cell is just a rectangle in fractions of the usable area, and every frame is
-auto-filled with the best-fitting photo, so you can rearrange freely.
+> layouts as cells `{x, y, w, h}` in 0–1 fractions of the screen; cells must tile
+> the area exactly with no gaps or overlaps. My screen is **1920×1080 (16:9)**,
+> so a cell's true aspect ratio is `w / h * 16/9`. My photos cluster at these
+> ratios: **1.33 (120 photos), 0.75 (30), 1.0 (12)**. Write me 8 varied layouts —
+> some asymmetric — where *every* frame's true aspect ratio lands on one of those
+> clusters. Show the computed ratio of each frame so I can check."
 
 ---
 

@@ -11,6 +11,9 @@ Item {
 
     // Emitted when the sharp photo is decoded and ready to display.
     signal loaded()
+    // Emitted once the photo has stopped loading, whether it succeeded or not.
+    // Preloading waits on this, so one unreadable file can't stall a layout change.
+    signal settled()
 
     // Background: a filled + blurred version of the same image.
     Image {
@@ -48,7 +51,12 @@ Item {
         sourceSize: Qt.size(800, 800) // sharp enough for a tile (incl. Ken Burns zoom)
         transformOrigin: Item.Center
         transform: Translate { id: drift }
-        onStatusChanged: if (status === Image.Ready) layer.loaded()
+        onStatusChanged: {
+            if (status === Image.Ready)
+                layer.loaded();
+            if (status === Image.Ready || status === Image.Error)
+                layer.settled();
+        }
     }
 
     // Ken Burns, anchored to the "whole photo" fit:

@@ -9,11 +9,9 @@ Item {
 
     property real cornerRadius: 22
     property var controller             // reference to the root (main.qml)
+    property var grid                   // the HuangjinGrid this tile belongs to
     property string currentUrl: ""
     property bool frontIsA: true
-
-    opacity: 0
-    scale: 0.96
 
     Item {
         id: content
@@ -43,25 +41,28 @@ Item {
         visible: false
     }
 
-    // Gentle fade-in on creation.
-    ParallelAnimation {
-        id: appear
-        NumberAnimation { target: tile; property: "opacity"; to: 1; duration: 650; easing.type: Easing.OutCubic }
-        NumberAnimation { target: tile; property: "scale"; to: 1; duration: 650; easing.type: Easing.OutCubic }
-    }
-
+    // Loads the first photo and tells the grid once it has decoded. The grid is
+    // invisible until every tile has reported in, so the whole arrangement
+    // appears at once rather than filling in frame by frame.
     Component.onCompleted: {
         var url = controller.pickPhoto(tile.width / tile.height, "");
         tile.currentUrl = url;
-        (frontIsA ? layerA : layerB).imageUrl = url;
-        if (url !== "")
-            controller.reserve(url, "");
-        controller.registerTile(tile);
-        appear.start();
+        if (url === "") {
+            grid.tileSettled();
+            return;
+        }
+        controller.reserve(url, "");
+
+        var front = frontIsA ? layerA : layerB;
+        var onFirst = function () {
+            front.settled.disconnect(onFirst);
+            grid.tileSettled();
+        };
+        front.settled.connect(onFirst);
+        front.imageUrl = url;
     }
 
     Component.onDestruction: {
-        controller.unregisterTile(tile);
         controller.release(tile.currentUrl);
     }
 
