@@ -40,154 +40,104 @@ Rectangle {
 
     // ---- Layouts ----
     // A layout is a list of cells; a cell is a rectangle {x, y, w, h} in [0..1]
-    // of the usable area. Cells tile the area exactly: no gaps, no overlaps.
+    // of the usable area. Cells tile the area exactly: no gaps, no overlaps, and
+    // no more than six per layout - beyond that the photos get too small.
     //
     // A frame's shape is not its cell's shape: on a 16:10 screen a cell's aspect
     // ratio is w * 1.6 / h. Every frame below is sized so that ratio lands on one
-    // of the shapes photos actually come in - 0.75 (3:4 portrait), 1.0 (square),
-    // 1.33 (4:3 landscape), 1.5 (3:2) - because a frame shaped like nothing in
-    // the library can only ever be filled with blur. See the README before
-    // editing these.
+    // of the shapes photos actually come in - 0.50 (very tall), 0.75 (3:4
+    // portrait), 1.0 (square), 1.33 (4:3), 1.5 (3:2), 2.0 (panorama) - because a
+    // frame shaped like nothing in the library can only be filled with blur.
+    //
+    // The *mix* matters as much as the shapes. Frames of a given shape should be
+    // roughly proportional to how many photos have it, or the photos of an
+    // under-framed shape each get far more screen time than the rest. Square and
+    // panorama frames are the ones to watch: they fall out of a tiling easily,
+    // but few photos are either. See the README before editing these.
     property var layouts: [
-        // 1 - portrait wall: eight 3:4 frames
+        // 1 - Portrait hero, offset flanks
+        // your favourite: hero flanked by columns broken at opposite heights
+        // frames: 0.75 0.99 0.75 0.99 0.75
         [
-            {x:0.00, y:0.00, w:0.25, h:0.50}, {x:0.25, y:0.00, w:0.25, h:0.50},
-            {x:0.50, y:0.00, w:0.25, h:0.50}, {x:0.75, y:0.00, w:0.25, h:0.50},
-            {x:0.00, y:0.50, w:0.25, h:0.50}, {x:0.25, y:0.50, w:0.25, h:0.50},
-            {x:0.50, y:0.50, w:0.25, h:0.50}, {x:0.75, y:0.50, w:0.25, h:0.50}
+            {x:0.00000, y:0.0000, w:0.26550, h:0.5700}, {x:0.00000, y:0.5700, w:0.26550, h:0.4300},
+            {x:0.26550, y:0.0000, w:0.46900, h:1.0000}, {x:0.73450, y:0.0000, w:0.26550, h:0.4300},
+            {x:0.73450, y:0.4300, w:0.26550, h:0.5700}
         ],
-        // 2 - full-height portrait hero, flanks split at opposite heights
+        // 2 - Hero hard left, mixed columns
+        // your favourite: hero hard left, two mixed columns beside it
+        // frames: 0.75 1.00 1.33 1.52 0.75 1.03
         [
-            {x:0.0000, y:0.00, w:0.2655, h:0.57}, {x:0.0000, y:0.57, w:0.2655, h:0.43},
-            {x:0.2655, y:0.00, w:0.4690, h:1.00},
-            {x:0.7345, y:0.00, w:0.2655, h:0.43}, {x:0.7345, y:0.43, w:0.2655, h:0.57}
+            {x:0.00000, y:0.0000, w:0.46900, h:1.0000}, {x:0.46900, y:0.0000, w:0.26000, h:0.4150},
+            {x:0.46900, y:0.4150, w:0.26000, h:0.3120}, {x:0.46900, y:0.7270, w:0.26000, h:0.2730},
+            {x:0.72900, y:0.0000, w:0.27100, h:0.5800}, {x:0.72900, y:0.5800, w:0.27100, h:0.4200}
         ],
-        // 3 - portrait hero hard left, two mixed columns beside it
+        // 3 - Portrait hero left, landscape over portraits
+        // your favourite: hero left, a wide landscape over a row of portraits
+        // frames: 1.33 0.75 0.78 0.78 0.78
         [
-            {x:0.000, y:0.000, w:0.469, h:1.000},
-            {x:0.469, y:0.000, w:0.260, h:0.415}, {x:0.469, y:0.415, w:0.260, h:0.312},
-            {x:0.469, y:0.727, w:0.260, h:0.273},
-            {x:0.729, y:0.000, w:0.271, h:0.580}, {x:0.729, y:0.580, w:0.271, h:0.420}
-        ],
-        // 4 - row of portraits over a square/landscape/square band
-        [
-            {x:0.00, y:0.00, w:0.25, h:0.52}, {x:0.25, y:0.00, w:0.25, h:0.52},
-            {x:0.50, y:0.00, w:0.25, h:0.52}, {x:0.75, y:0.00, w:0.25, h:0.52},
-            {x:0.00, y:0.52, w:0.30, h:0.48}, {x:0.30, y:0.52, w:0.40, h:0.48},
-            {x:0.70, y:0.52, w:0.30, h:0.48}
-        ],
-        // 5 - quilt: uneven landscape/square strip over portrait + square
-        [
-            {x:0.0000, y:0.00, w:0.1688, h:0.36}, {x:0.1688, y:0.00, w:0.3000, h:0.36},
-            {x:0.4688, y:0.00, w:0.3000, h:0.36}, {x:0.7688, y:0.00, w:0.2312, h:0.36},
-            {x:0.0000, y:0.36, w:0.3000, h:0.64}, {x:0.3000, y:0.36, w:0.4000, h:0.64},
-            {x:0.7000, y:0.36, w:0.3000, h:0.64}
-        ],
-        // 6 - two big landscapes over a mixed row
-        [
-            {x:0.0000, y:0.00, w:0.5000, h:0.60}, {x:0.5000, y:0.00, w:0.5000, h:0.60},
-            {x:0.0000, y:0.60, w:0.1875, h:0.40}, {x:0.1875, y:0.60, w:0.1875, h:0.40},
-            {x:0.3750, y:0.60, w:0.3750, h:0.40}, {x:0.7500, y:0.60, w:0.2500, h:0.40}
-        ],
-        // 7 - band of four landscapes over three tall portraits
-        [
-            {x:0.0000, y:0.00, w:0.2500, h:0.30}, {x:0.2500, y:0.00, w:0.2500, h:0.30},
-            {x:0.5000, y:0.00, w:0.2500, h:0.30}, {x:0.7500, y:0.00, w:0.2500, h:0.30},
-            {x:0.0000, y:0.30, w:0.3281, h:0.70}, {x:0.3281, y:0.30, w:0.3281, h:0.70},
-            {x:0.6562, y:0.30, w:0.3438, h:0.70}
-        ],
-        // 8 - staircase: three columns, each breaking at a different height
-        [
-            {x:0.0000, y:0.0000, w:0.3600, h:0.5720}, {x:0.0000, y:0.5720, w:0.3600, h:0.4280},
-            {x:0.3600, y:0.0000, w:0.2655, h:0.4300}, {x:0.3600, y:0.4300, w:0.2655, h:0.5700},
-            {x:0.6255, y:0.0000, w:0.3745, h:0.5992}, {x:0.6255, y:0.5992, w:0.3745, h:0.4008}
-        ],
-        // 9 - portrait hero left, 3x2 grid of landscapes right
-        [
-            {x:0.0000, y:0.0000, w:0.4690, h:1.0000},
-            {x:0.4690, y:0.0000, w:0.2655, h:0.3333}, {x:0.7345, y:0.0000, w:0.2655, h:0.3333},
-            {x:0.4690, y:0.3333, w:0.2655, h:0.3334}, {x:0.7345, y:0.3333, w:0.2655, h:0.3334},
-            {x:0.4690, y:0.6667, w:0.2655, h:0.3333}, {x:0.7345, y:0.6667, w:0.2655, h:0.3333}
-        ],
-        // 10 - very tall hero (r 0.50). The only home for vertical panoramas and
-        // phone-shaped shots; without it they can never be shown at all.
-        [
-            {x:0.0000, y:0.00, w:0.3125, h:1.00},
-            {x:0.3125, y:0.00, w:0.2500, h:0.40}, {x:0.3125, y:0.40, w:0.2500, h:0.30},
-            {x:0.3125, y:0.70, w:0.2500, h:0.30},
-            {x:0.5625, y:0.00, w:0.2344, h:0.50}, {x:0.5625, y:0.50, w:0.2344, h:0.50},
-            {x:0.7969, y:0.00, w:0.2031, h:0.50}, {x:0.7969, y:0.50, w:0.2031, h:0.50}
-        ],
-        // 11 - panorama band (r 2.00) with a tall accent. Likewise the only frame
-        // wide enough for the panoramas. Few photos are this shape, so this layout
-        // runs out of fresh ones quickly and is short-lived by design.
-        [
-            {x:0.00000, y:0.00, w:0.50000, h:0.40},
-            {x:0.50000, y:0.00, w:0.25000, h:0.40}, {x:0.75000, y:0.00, w:0.25000, h:0.40},
-            {x:0.00000, y:0.40, w:0.18750, h:0.60}, {x:0.18750, y:0.40, w:0.28125, h:0.60},
-            {x:0.46875, y:0.40, w:0.28125, h:0.60}, {x:0.75000, y:0.40, w:0.25000, h:0.60}
-        ],
-        // 12 - tall photos down the side, a panorama along the foot, everything
-        // else in the middle: portraits 0.75, tall 0.50/0.53, pano 2.00, landscapes 1.32
-        [
-            {x:0.0000, y:0.00, w:0.1875, h:0.60}, {x:0.0000, y:0.60, w:0.1875, h:0.40},
-            {x:0.1875, y:0.00, w:0.3375, h:0.72},
-            {x:0.5250, y:0.00, w:0.2375, h:0.72}, {x:0.7625, y:0.00, w:0.2375, h:0.72},
-            {x:0.1875, y:0.72, w:0.3500, h:0.28},
-            {x:0.5375, y:0.72, w:0.2313, h:0.28}, {x:0.7688, y:0.72, w:0.2312, h:0.28}
-        ],
-        // 13 - the same idea flipped: panorama along the top, tall column down the
-        // right, a big 4:3 landscape holding the middle
-        [
-            {x:0.0000, y:0.00, w:0.4000, h:0.32},
-            {x:0.4000, y:0.00, w:0.2063, h:0.32}, {x:0.6063, y:0.00, w:0.2062, h:0.32},
-            {x:0.0000, y:0.32, w:0.5667, h:0.68}, {x:0.5667, y:0.32, w:0.2458, h:0.68},
-            {x:0.8125, y:0.00, w:0.1875, h:0.60}, {x:0.8125, y:0.60, w:0.1875, h:0.40}
-        ],
-        // 14 - portrait columns broken at staggered heights, a tall pair, pano foot
-        [
-            {x:0.0000, y:0.00, w:0.2344, h:0.50}, {x:0.0000, y:0.50, w:0.2344, h:0.50},
-            {x:0.2344, y:0.00, w:0.1563, h:0.50}, {x:0.2344, y:0.50, w:0.1563, h:0.50},
-            {x:0.3907, y:0.00, w:0.3516, h:0.72}, {x:0.3907, y:0.72, w:0.3516, h:0.28},
-            {x:0.7423, y:0.00, w:0.2577, h:0.55}, {x:0.7423, y:0.55, w:0.2577, h:0.45}
-        ],
-
-        // Layouts 15-18 carry no square and no panorama frame at all - only the
-        // shapes most photos actually are (3:4 portrait, 4:3 and 3:2 landscape).
-        // Square frames are easy to produce by accident when tiling and had crept
-        // into most of the layouts above, but only ~25 photos are square, so those
-        // few were getting several times the screen time of an ordinary portrait.
-        // These give the chooser somewhere to go that serves the common shapes.
-
-        // 15 - two stacked landscapes, portraits over landscapes beside them
-        [
-            {x:0.00000, y:0.0000, w:0.41670, h:0.5000},
-            {x:0.00000, y:0.5000, w:0.41670, h:0.5000},
-            {x:0.41670, y:0.0000, w:0.29165, h:0.6222}, {x:0.70835, y:0.0000, w:0.29165, h:0.6222},
-            {x:0.41670, y:0.6222, w:0.29165, h:0.3778}, {x:0.70835, y:0.6222, w:0.29165, h:0.3778}
-        ],
-        // 16 - three portraits over a band of three 3:2 landscapes
-        [
-            {x:0.0000, y:0.00, w:0.3333, h:0.64}, {x:0.3333, y:0.00, w:0.3334, h:0.64},
-            {x:0.6667, y:0.00, w:0.3333, h:0.64},
-            {x:0.0000, y:0.64, w:0.3333, h:0.36}, {x:0.3333, y:0.64, w:0.3334, h:0.36},
-            {x:0.6667, y:0.64, w:0.3333, h:0.36}
-        ],
-        // 17 - portrait hero left, wide landscape over a row of three portraits
-        [
-            {x:0.46875, y:0.0000, w:0.53125, h:0.6375},
-            {x:0.00000, y:0.0000, w:0.46875, h:1.0000},
-            {x:0.46875, y:0.6375, w:0.17708, h:0.3625},
-            {x:0.64583, y:0.6375, w:0.17708, h:0.3625},
+            {x:0.46875, y:0.0000, w:0.53125, h:0.6375}, {x:0.00000, y:0.0000, w:0.46875, h:1.0000},
+            {x:0.46875, y:0.6375, w:0.17708, h:0.3625}, {x:0.64583, y:0.6375, w:0.17708, h:0.3625},
             {x:0.82291, y:0.6375, w:0.17709, h:0.3625}
         ],
-        // 18 - two mirrored portrait/3:2 columns, landscape pair on the right
+        // 4 - Three portraits over a 3:2 band
+        // three portraits over a band of three 3:2 landscapes
+        // frames: 0.83 0.83 0.83 1.48 1.48 1.48
         [
-            {x:0.0000, y:0.0000, w:0.3125, h:0.6667}, {x:0.0000, y:0.6667, w:0.3125, h:0.3333},
-            {x:0.3125, y:0.0000, w:0.3125, h:0.3333}, {x:0.3125, y:0.3333, w:0.3125, h:0.6667},
-            {x:0.6250, y:0.0000, w:0.3750, h:0.5000}, {x:0.6250, y:0.5000, w:0.3750, h:0.5000}
+            {x:0.00000, y:0.0000, w:0.33330, h:0.6400}, {x:0.33330, y:0.0000, w:0.33340, h:0.6400},
+            {x:0.66670, y:0.0000, w:0.33330, h:0.6400}, {x:0.00000, y:0.6400, w:0.33330, h:0.3600},
+            {x:0.33330, y:0.6400, w:0.33340, h:0.3600}, {x:0.66670, y:0.6400, w:0.33330, h:0.3600}
+        ],
+        // 5 - Two big landscapes over a mixed row
+        // two big 4:3 landscapes over a mixed row
+        // frames: 1.33 1.33 0.75 0.75 1.50 1.00
+        [
+            {x:0.00000, y:0.0000, w:0.50000, h:0.6000}, {x:0.50000, y:0.0000, w:0.50000, h:0.6000},
+            {x:0.00000, y:0.6000, w:0.18750, h:0.4000}, {x:0.18750, y:0.6000, w:0.18750, h:0.4000},
+            {x:0.37500, y:0.6000, w:0.37500, h:0.4000}, {x:0.75000, y:0.6000, w:0.25000, h:0.4000}
+        ],
+        // 6 - Portrait hero and a quartet
+        // portrait hero with a quartet of portraits - the portrait-heaviest layout
+        // frames: 0.75 0.85 0.85 0.85 0.85
+        [
+            {x:0.00000, y:0.0000, w:0.46875, h:1.0000}, {x:0.46875, y:0.0000, w:0.26562, h:0.5000},
+            {x:0.46875, y:0.5000, w:0.26562, h:0.5000}, {x:0.73438, y:0.0000, w:0.26562, h:0.5000},
+            {x:0.73438, y:0.5000, w:0.26562, h:0.5000}
+        ],
+        // 7 - Tall pair, portrait hero, landscape stack
+        // a pair of very tall frames down the edge, portrait hero, landscape stack
+        // frames: 0.50 0.50 0.75 1.20 1.20
+        [
+            {x:0.00000, y:0.0000, w:0.15625, h:0.5000}, {x:0.00000, y:0.5000, w:0.15625, h:0.5000},
+            {x:0.15625, y:0.0000, w:0.46875, h:1.0000}, {x:0.62500, y:0.0000, w:0.37500, h:0.5000},
+            {x:0.62500, y:0.5000, w:0.37500, h:0.5000}
+        ],
+        // 8 - Tall hero, portraits and landscapes
+        // very tall hero: with 'Portrait pair' below, the only home for vertical panoramas
+        // frames: 0.50 0.80 0.80 1.40 1.40
+        [
+            {x:0.00000, y:0.0000, w:0.31250, h:1.0000}, {x:0.31250, y:0.0000, w:0.25000, h:0.5000},
+            {x:0.31250, y:0.5000, w:0.25000, h:0.5000}, {x:0.56250, y:0.0000, w:0.43750, h:0.5000},
+            {x:0.56250, y:0.5000, w:0.43750, h:0.5000}
+        ],
+        // 9 - Panorama band over three portraits
+        // the only frame wide enough for panoramas. Few photos are this wide, so this
+        // layout runs out of fresh ones fast and is short-lived by design
+        // frames: 2.00 1.33 0.67 0.89 0.89 0.89
+        [
+            {x:0.00000, y:0.0000, w:0.50000, h:0.4000}, {x:0.50000, y:0.0000, w:0.33330, h:0.4000},
+            {x:0.83330, y:0.0000, w:0.16670, h:0.4000}, {x:0.00000, y:0.4000, w:0.33330, h:0.6000},
+            {x:0.33330, y:0.4000, w:0.33340, h:0.6000}, {x:0.66670, y:0.4000, w:0.33330, h:0.6000}
+        ],
+        // 10 - Portrait pair, tall hero, landscape stack
+        // portrait pair, a very tall hero, and a stack of landscapes
+        // frames: 0.75 0.75 0.56 1.32 1.32
+        [
+            {x:0.00000, y:0.0000, w:0.23440, h:0.5000}, {x:0.00000, y:0.5000, w:0.23440, h:0.5000},
+            {x:0.23440, y:0.0000, w:0.35160, h:1.0000}, {x:0.58600, y:0.0000, w:0.41400, h:0.5000},
+            {x:0.58600, y:0.5000, w:0.41400, h:0.5000}
         ]
     ]
+
     property int currentLayout: -1
     property bool started: false
     property bool discovered: false
