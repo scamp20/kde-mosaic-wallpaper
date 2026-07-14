@@ -11,8 +11,7 @@ into a different layout.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
 - 🔀 **Ten layouts, six photos maximum** — portrait heroes, landscape stacks, tall columns and a panorama band. Few, large frames beat many small ones.
-- 🚫 **No repeats** — a photo is never shown twice while a layout is up, so a session works through *distinct* photos instead of recycling the same favourites.
-- ⏳ **Self-timed** — a layout stays up for as long as it has fresh photos that suit its frames, so its length varies: a wall of portraits can draw on hundreds and runs to the cap, while a layout of square frames exhausts the few square photos and moves on early.
+- 🚫 **No repeats** — within a layout, a frame works through every photo that suits it before any of them comes round again.
 - ⚖️ **Even-handed** — the next layout is chosen to be *unlike* the current one, and biased towards whichever photos have had the least screen time, so the wallpaper stays fresh while every photo works its way round.
 - ⏱️ **Oldest goes first** — the photo replaced next is the one that has been up longest (weighted, so it stays unpredictable). A photo that has only just appeared is almost never snatched straight back off.
 - ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
@@ -92,8 +91,7 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Gap between photos | `property int gap` | `12` |
 | Corner rounding | `property real cornerRadius` | `22` |
 | How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 4 s |
-| Longest a layout may stay up | `layoutMin` / `layoutMax` (ms) | 5–7 min (a *cap*, see below) |
-| Shortest a layout may stay up | `layoutMinDwell` (ms) | 1 min |
+| How often the layout changes | `layoutInterval` (ms) | every 5 min |
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
 | How strongly the next layout must differ | `freshnessBias` | `2.0` (0 = ignore, higher = more contrast) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
@@ -125,13 +123,15 @@ the popular shapes more layouts *and* more time without any of it being
 hard-coded. Across the author's library this cut the gap between the most- and
 least-shown photo from **8.7× to 2.6×**.
 
-**How long a layout lasts.** No photo repeats while a layout is up. So a layout
-runs until it can no longer fill one of its frames with a photo that is both
-fresh and a fit — then it re-arranges. That makes its length depend on how much of
-*your* library suits its frames, which is the point: it stops common shapes
-hogging the screen and gives rarer ones a turn. `layoutMin`/`layoutMax` are only
-the **upper bound**, for layouts broad enough to otherwise run for a quarter of an
-hour. With the author's library the spread is roughly 2.5–7 minutes.
+**How long a layout lasts.** Five minutes (`layoutInterval`), then it re-arranges.
+
+No photo repeats within a layout: a photo is set aside once shown, so each frame
+works through everything that suits it rather than resampling the same favourites.
+If a frame *does* run out — a panorama frame has only a handful of photos wide
+enough, and gets through them well inside five minutes — then only **that frame's**
+photos come round again. The rest of the layout keeps its no-repeat guarantee, so
+a portrait frame with 190 photos left doesn't start repeating just because the
+panorama beside it ran dry.
 
 - **Motion:** the Ken Burns zoom/pan lives in
   [`contents/ui/HuangjinPhoto.qml`](contents/ui/HuangjinPhoto.qml). To make it
