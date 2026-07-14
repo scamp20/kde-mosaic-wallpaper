@@ -10,7 +10,7 @@ into a different layout.
 - 🖼️ **Never crops your subjects** — the whole photo is always shown; gaps are filled with a soft blurred version of the same image.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
-- 🔀 **Nine layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts and staircases.
+- 🔀 **Eleven layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts, staircases, a very-tall hero and a panorama band.
 - 🚫 **No repeats** — a photo is never shown twice while a layout is up, so a session works through *distinct* photos instead of recycling the same favourites.
 - ⏳ **Self-timed** — a layout stays up for as long as it has fresh photos that suit its frames, so its length varies: a wall of portraits can draw on hundreds and runs to the cap, while a layout of square frames exhausts the few square photos and moves on early.
 - ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
@@ -94,7 +94,7 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Shortest a layout may stay up | `layoutMinDwell` (ms) | 1 min |
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
-| The frame layouts | `property var layouts` | 9 layouts (see below) |
+| The frame layouts | `property var layouts` | 11 layouts (see below) |
 
 **How a photo is chosen.** A frame draws, at random and with equal chance, from
 *every* photo whose aspect ratio is within `fitTolerance` of its own — not from
@@ -134,7 +134,12 @@ is `w * 1.6 / h` (in general, `w / h * screen_width / screen_height`). So a
 "square-looking" cell of `w:0.5, h:0.5` is really a **1.6:1** frame — and if you
 own no 1.6:1 photos, it can only ever be filled with blur, no matter how good the
 shape-matching is. Frames are sized so that ratio lands on shapes the library
-actually contains (0.75, 1.0, 1.33, 1.5).
+actually contains (0.5, 0.67, 0.75, 1.0, 1.33, 1.5, 2.0).
+
+The corollary bites too: **a photo whose shape no frame matches is never shown at
+all.** Not rarely — never, however long the wallpaper runs. That's why there's a
+very-tall layout (frames at 0.5) and a panorama one (2.0): without them, vertical
+panoramas and wide shots simply never appear.
 
 Measure your own library first:
 
@@ -142,6 +147,9 @@ Measure your own library first:
 identify -format "%w %h\n" contents/photos/* \
   | awk '{ printf "%.2f\n", $1/$2 }' | sort -n | uniq -c | sort -rn | head
 ```
+
+Every cluster in that list wants a frame within ~18% (`fitTolerance`) of it
+somewhere in `layouts`, or those photos are dead weight.
 
 Then **paste `contents/ui/main.qml` into an AI assistant** (ChatGPT, Claude, …)
 and ask for layouts tuned to what you found:

@@ -108,6 +108,24 @@ Rectangle {
             {x:0.4690, y:0.0000, w:0.2655, h:0.3333}, {x:0.7345, y:0.0000, w:0.2655, h:0.3333},
             {x:0.4690, y:0.3333, w:0.2655, h:0.3334}, {x:0.7345, y:0.3333, w:0.2655, h:0.3334},
             {x:0.4690, y:0.6667, w:0.2655, h:0.3333}, {x:0.7345, y:0.6667, w:0.2655, h:0.3333}
+        ],
+        // 10 - very tall hero (r 0.50). The only home for vertical panoramas and
+        // phone-shaped shots; without it they can never be shown at all.
+        [
+            {x:0.0000, y:0.00, w:0.3125, h:1.00},
+            {x:0.3125, y:0.00, w:0.2500, h:0.40}, {x:0.3125, y:0.40, w:0.2500, h:0.30},
+            {x:0.3125, y:0.70, w:0.2500, h:0.30},
+            {x:0.5625, y:0.00, w:0.2344, h:0.50}, {x:0.5625, y:0.50, w:0.2344, h:0.50},
+            {x:0.7969, y:0.00, w:0.2031, h:0.50}, {x:0.7969, y:0.50, w:0.2031, h:0.50}
+        ],
+        // 11 - panorama band (r 2.00) with a tall accent. Likewise the only frame
+        // wide enough for the panoramas. Few photos are this shape, so this layout
+        // runs out of fresh ones quickly and is short-lived by design.
+        [
+            {x:0.00000, y:0.00, w:0.50000, h:0.40},
+            {x:0.50000, y:0.00, w:0.25000, h:0.40}, {x:0.75000, y:0.00, w:0.25000, h:0.40},
+            {x:0.00000, y:0.40, w:0.18750, h:0.60}, {x:0.18750, y:0.40, w:0.28125, h:0.60},
+            {x:0.46875, y:0.40, w:0.28125, h:0.60}, {x:0.75000, y:0.40, w:0.25000, h:0.60}
         ]
     ]
     property int currentLayout: -1
