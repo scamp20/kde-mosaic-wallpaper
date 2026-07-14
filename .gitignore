@@ -3,6 +3,10 @@
 contents/photos/*
 !contents/photos/.gitkeep
 
+# Generated preview of the layouts — reflects whoever's photo library it was
+# built against, so it is not the same file for two people.
+.layouts-preview.html
+
 # Backups / archives
 *.tar.gz
 *.zip
