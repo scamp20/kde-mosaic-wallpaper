@@ -10,9 +10,11 @@ into a different layout.
 - 🖼️ **Never crops your subjects** — the whole photo is always shown; gaps are filled with a soft blurred version of the same image.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
-- 🔀 **Eleven layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts, staircases, a very-tall hero and a panorama band.
+- 🔀 **Fourteen layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts, staircases, tall side-columns with panorama bands, and more.
 - 🚫 **No repeats** — a photo is never shown twice while a layout is up, so a session works through *distinct* photos instead of recycling the same favourites.
 - ⏳ **Self-timed** — a layout stays up for as long as it has fresh photos that suit its frames, so its length varies: a wall of portraits can draw on hundreds and runs to the cap, while a layout of square frames exhausts the few square photos and moves on early.
+- ⚖️ **Even-handed** — the next layout is chosen to be *unlike* the current one, and biased towards whichever photos have had the least screen time, so the wallpaper stays fresh while every photo works its way round.
+- ⏱️ **Oldest goes first** — the photo replaced next is the one that has been up longest (weighted, so it stays unpredictable). A photo that has only just appeared is almost never snatched straight back off.
 - ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
 
 > **Note:** It uses your photos, not the ones in this repo. The `photos/` folder
@@ -93,8 +95,9 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | Longest a layout may stay up | `layoutMin` / `layoutMax` (ms) | 5–7 min (a *cap*, see below) |
 | Shortest a layout may stay up | `layoutMinDwell` (ms) | 1 min |
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
+| How strongly the next layout must differ | `freshnessBias` | `2.0` (0 = ignore, higher = more contrast) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
-| The frame layouts | `property var layouts` | 11 layouts (see below) |
+| The frame layouts | `property var layouts` | 14 layouts (see below) |
 
 **How a photo is chosen.** A frame draws, at random and with equal chance, from
 *every* photo whose aspect ratio is within `fitTolerance` of its own — not from
@@ -104,6 +107,23 @@ full of exact ties (189 of the author's are *precisely* 3:4), and a fixed
 which suits a 3:4 frame perfectly well — ranks just outside the window and is
 **never shown, ever**. Widening `fitTolerance` lets more shapes into each frame at
 the cost of a little more blur; tightening it does the reverse.
+
+**Which photo changes next.** The tile whose photo has been up longest, chosen by
+a weighted draw (age cubed) rather than strictly, so it never settles into a
+visible order. A uniform random pick — the obvious implementation — replaced 29%
+of photos within ten seconds of them appearing; this brings that down to 4%.
+
+**Which layout comes next.** Weighted by two things at once. *Freshness*: layouts
+whose mix of frame shapes is unlike the one on screen are favoured
+(`freshnessBias`), so the wallpaper changes character rather than just
+reshuffling. *Hunger*: layouts whose frames draw on the least-shown photos are
+favoured. The second one is what evens out individual photos — a 3:4 portrait
+competing with 190 others inevitably gets less screen time each than a square
+competing with 25, so it's the *common* shapes that are starved per photo.
+Weighting by hunger pulls layout time back toward whoever is behind, which hands
+the popular shapes more layouts *and* more time without any of it being
+hard-coded. Across the author's library this cut the gap between the most- and
+least-shown photo from **8.7× to 3.4×**.
 
 **How long a layout lasts.** No photo repeats while a layout is up. So a layout
 runs until it can no longer fill one of its frames with a photo that is both

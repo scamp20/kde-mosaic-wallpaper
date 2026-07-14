@@ -46,14 +46,52 @@ Item {
         }
     }
 
-    // Read the tiles from the Repeater rather than keeping our own list: if the
-    // Repeater ever rebuilds (a resize), a cached list would hold dead objects.
-    function swapRandomTile() {
+    // Picks which tile to change next. Weighted by how long each photo has been
+    // up (age cubed), so the oldest is usually the one to go and a photo that has
+    // only just arrived is almost never yanked straight back off - which is what
+    // a uniform random pick kept doing. It stays a weighted draw rather than
+    // "always the oldest" so the wallpaper doesn't cycle in a visibly fixed order.
+    //
+    // Tiles are read from the Repeater rather than a cached list: if the Repeater
+    // rebuilds (a resize), a cached list would hold dead objects.
+    function swapAgedTile() {
         if (!live || cells.count === 0)
             return;
-        var t = cells.itemAt(Math.floor(Math.random() * cells.count));
-        if (t)
-            t.swapImage();
+
+        var now = Date.now();
+        var weights = [];
+        var total = 0;
+        var i, t, age, w;
+
+        for (i = 0; i < cells.count; i++) {
+            t = cells.itemAt(i);
+            if (!t) {
+                weights.push(0);
+                continue;
+            }
+            age = Math.max(0, now - t.shownAt) / 1000;
+            w = age * age * age;
+            weights.push(w);
+            total += w;
+        }
+
+        if (total <= 0) {          // a brand-new grid: every photo is the same age
+            t = cells.itemAt(Math.floor(Math.random() * cells.count));
+            if (t)
+                t.swapImage();
+            return;
+        }
+
+        var r = Math.random() * total;
+        for (i = 0; i < cells.count; i++) {
+            r -= weights[i];
+            if (r <= 0) {
+                t = cells.itemAt(i);
+                if (t)
+                    t.swapImage();
+                return;
+            }
+        }
     }
 
     NumberAnimation {

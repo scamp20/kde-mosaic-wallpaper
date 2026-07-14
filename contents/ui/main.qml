@@ -126,6 +126,30 @@ Rectangle {
             {x:0.50000, y:0.00, w:0.25000, h:0.40}, {x:0.75000, y:0.00, w:0.25000, h:0.40},
             {x:0.00000, y:0.40, w:0.18750, h:0.60}, {x:0.18750, y:0.40, w:0.28125, h:0.60},
             {x:0.46875, y:0.40, w:0.28125, h:0.60}, {x:0.75000, y:0.40, w:0.25000, h:0.60}
+        ],
+        // 12 - tall photos down the side, a panorama along the foot, everything
+        // else in the middle: portraits 0.75, tall 0.50/0.53, pano 2.00, landscapes 1.32
+        [
+            {x:0.0000, y:0.00, w:0.1875, h:0.60}, {x:0.0000, y:0.60, w:0.1875, h:0.40},
+            {x:0.1875, y:0.00, w:0.3375, h:0.72},
+            {x:0.5250, y:0.00, w:0.2375, h:0.72}, {x:0.7625, y:0.00, w:0.2375, h:0.72},
+            {x:0.1875, y:0.72, w:0.3500, h:0.28},
+            {x:0.5375, y:0.72, w:0.2313, h:0.28}, {x:0.7688, y:0.72, w:0.2312, h:0.28}
+        ],
+        // 13 - the same idea flipped: panorama along the top, tall column down the
+        // right, a big 4:3 landscape holding the middle
+        [
+            {x:0.0000, y:0.00, w:0.4000, h:0.32},
+            {x:0.4000, y:0.00, w:0.2063, h:0.32}, {x:0.6063, y:0.00, w:0.2062, h:0.32},
+            {x:0.0000, y:0.32, w:0.5667, h:0.68}, {x:0.5667, y:0.32, w:0.2458, h:0.68},
+            {x:0.8125, y:0.00, w:0.1875, h:0.60}, {x:0.8125, y:0.60, w:0.1875, h:0.40}
+        ],
+        // 14 - portrait columns broken at staggered heights, a tall pair, pano foot
+        [
+            {x:0.0000, y:0.00, w:0.2344, h:0.50}, {x:0.0000, y:0.50, w:0.2344, h:0.50},
+            {x:0.2344, y:0.00, w:0.1563, h:0.50}, {x:0.2344, y:0.50, w:0.1563, h:0.50},
+            {x:0.3907, y:0.00, w:0.3516, h:0.72}, {x:0.3907, y:0.72, w:0.3516, h:0.28},
+            {x:0.7423, y:0.00, w:0.2577, h:0.55}, {x:0.7423, y:0.55, w:0.2577, h:0.45}
         ]
     ]
     property int currentLayout: -1
@@ -228,6 +252,7 @@ Rectangle {
 
         var url = band[Math.floor(Math.random() * band.length)].url;
         shownUrls.push(url);
+        showCounts[url] = (showCounts[url] || 0) + 1;   // feeds frameHunger()
         return url;
     }
 
@@ -275,6 +300,7 @@ Rectangle {
         if (started)
             return;
         started = true;
+        buildProfiles();            // needs the screen size, so not before now
         startTransition();          // builds the first grid, fades it in when loaded
         swapTimer.start();
         if (relayoutEnabled)
@@ -370,6 +396,114 @@ Rectangle {
     property bool transitioning: false
     property double sessionStart: 0    // Date.now() when the live layout went up
 
+    // ---- Choosing the next layout ----
+    // Two pulls, multiplied together:
+    //
+    //  - freshness. A layout whose mix of frame shapes is unlike the one on screen
+    //    is likelier to come next, so two portrait walls rarely follow each other
+    //    and the wallpaper keeps changing character rather than just reshuffling.
+    //
+    //  - hunger. A layout is likelier if its frames draw on photos that have been
+    //    shown least. This is the part that evens out *individual* photos: a photo
+    //    in a big pool (a 3:4 portrait, one of ~190) gets far less screen time each
+    //    than one in a small pool (a square, one of ~25), so left alone it is the
+    //    common shapes that are starved per photo. Weighting by hunger pulls layout
+    //    time back towards whichever photos are actually behind, which gives the
+    //    popular shapes both more layouts and more time without hard-coding either.
+    property real freshnessBias: 2.0
+    property var showCounts: ({})      // url -> times displayed, for the whole session
+    property var profiles: []          // per layout: fraction of its frames per shape
+
+    // A frame's true aspect ratio: the cell's proportions times the screen's.
+    function frameRatio(cell) {
+        return (cell.w * mosaic.width) / (cell.h * mosaic.height);
+    }
+
+    function shapeBucket(r) {
+        if (r < 0.60) return 0;        // very tall
+        if (r < 0.72) return 1;        // 2:3
+        if (r < 0.92) return 2;        // 3:4 portrait
+        if (r < 1.15) return 3;        // square
+        if (r < 1.45) return 4;        // 4:3 landscape
+        if (r < 1.70) return 5;        // 3:2
+        return 6;                      // panorama
+    }
+
+    function buildProfiles() {
+        var out = [];
+        for (var i = 0; i < layouts.length; i++) {
+            var p = [0, 0, 0, 0, 0, 0, 0];
+            var cells = layouts[i];
+            for (var j = 0; j < cells.length; j++)
+                p[shapeBucket(frameRatio(cells[j]))] += 1 / cells.length;
+            out.push(p);
+        }
+        profiles = out;
+    }
+
+    // 0 = the same mix of shapes, 1 = no shape in common.
+    function profileDistance(a, b) {
+        var d = 0;
+        for (var k = 0; k < a.length; k++)
+            d += Math.abs(a[k] - b[k]);
+        return d / 2;
+    }
+
+    // How under-shown, on average, are the photos a frame of this ratio draws on.
+    // Squared: a mild preference for the hungriest barely moves the needle, while
+    // squaring measurably tightens the spread of screen time across photos.
+    function frameHunger(t) {
+        var sum = 0, n = 0;
+        for (var i = 0; i < infos.length; i++) {
+            if (Math.abs(infos[i].r - t) / t <= fitTolerance) {
+                var q = 1 / (1 + (showCounts[infos[i].url] || 0));
+                sum += q * q;
+                n++;
+            }
+        }
+        return n > 0 ? sum / n : 0;
+    }
+
+    function chooseLayout() {
+        if (layouts.length < 2)
+            return 0;
+
+        var weights = [], total = 0, i, j;
+        for (i = 0; i < layouts.length; i++) {
+            if (i === currentLayout) {     // never the same one twice running
+                weights.push(0);
+                continue;
+            }
+            var cells = layouts[i];
+            var hunger = 0;
+            for (j = 0; j < cells.length; j++)
+                hunger += frameHunger(frameRatio(cells[j]));
+            hunger /= cells.length;
+
+            var fresh = 1;
+            if (currentLayout >= 0 && profiles.length === layouts.length)
+                fresh += freshnessBias * profileDistance(profiles[i], profiles[currentLayout]);
+
+            weights.push(hunger * fresh);
+            total += hunger * fresh;
+        }
+
+        if (total <= 0) {                  // nothing measured yet: plain random
+            var k = Math.floor(Math.random() * layouts.length);
+            while (k === currentLayout)
+                k = Math.floor(Math.random() * layouts.length);
+            return k;
+        }
+
+        var r = Math.random() * total;
+        for (i = 0; i < layouts.length; i++) {
+            r -= weights[i];
+            if (r <= 0)
+                return i;
+        }
+        return layouts.length - 1;
+    }
+
     // Asked for when a layout has no fresh, well-fitting photos left to show.
     // Returns whether a re-arrange is actually starting: the caller needs to know,
     // because if not, it has to find that frame a photo some other way.
@@ -407,10 +541,7 @@ Rectangle {
         // A new session: the whole library is available again.
         shownUrls = [];
 
-        var idx = 0;
-        if (layouts.length > 1)
-            do { idx = Math.floor(Math.random() * layouts.length); }
-            while (idx === currentLayout);
+        var idx = chooseLayout();
 
         var g = gridComponent.createObject(stage, { layout: layouts[idx], nextIndex: idx });
         if (g === null) {
@@ -457,7 +588,7 @@ Rectangle {
         repeat: true
         onTriggered: {
             if (mosaic.liveGrid !== null)
-                mosaic.liveGrid.swapRandomTile();
+                mosaic.liveGrid.swapAgedTile();
             interval = mosaic.swapMin + Math.random() * (mosaic.swapMax - mosaic.swapMin);
         }
     }

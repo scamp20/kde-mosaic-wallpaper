@@ -13,6 +13,11 @@ Item {
     property string currentUrl: ""
     property bool frontIsA: true
 
+    // When the photo on show went up. The grid prefers to replace the oldest, so
+    // a photo that has only just appeared is very unlikely to be taken away again.
+    property double shownAt: Date.now()
+    onCurrentUrlChanged: shownAt = Date.now()
+
     Item {
         id: content
         anchors.fill: parent
