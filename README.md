@@ -10,7 +10,7 @@ into a different layout.
 - 🖼️ **Never crops your subjects** — the whole photo is always shown; gaps are filled with a soft blurred version of the same image.
 - 🎞️ **Gentle motion** — a slow zoom that only ever zooms *in*, so it never reveals empty space.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
-- 🔀 **Fourteen layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts, staircases, tall side-columns with panorama bands, and more.
+- 🔀 **Eighteen layouts** — portrait walls, landscape bands, off-centre heroes, asymmetric quilts, staircases, tall side-columns with panorama bands, and more.
 - 🚫 **No repeats** — a photo is never shown twice while a layout is up, so a session works through *distinct* photos instead of recycling the same favourites.
 - ⏳ **Self-timed** — a layout stays up for as long as it has fresh photos that suit its frames, so its length varies: a wall of portraits can draw on hundreds and runs to the cap, while a layout of square frames exhausts the few square photos and moves on early.
 - ⚖️ **Even-handed** — the next layout is chosen to be *unlike* the current one, and biased towards whichever photos have had the least screen time, so the wallpaper stays fresh while every photo works its way round.
@@ -97,7 +97,7 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
 | How strongly the next layout must differ | `freshnessBias` | `2.0` (0 = ignore, higher = more contrast) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
-| The frame layouts | `property var layouts` | 14 layouts (see below) |
+| The frame layouts | `property var layouts` | 18 layouts (see below) |
 
 **How a photo is chosen.** A frame draws, at random and with equal chance, from
 *every* photo whose aspect ratio is within `fitTolerance` of its own — not from
@@ -123,7 +123,7 @@ competing with 25, so it's the *common* shapes that are starved per photo.
 Weighting by hunger pulls layout time back toward whoever is behind, which hands
 the popular shapes more layouts *and* more time without any of it being
 hard-coded. Across the author's library this cut the gap between the most- and
-least-shown photo from **8.7× to 3.4×**.
+least-shown photo from **8.7× to 2.7×**.
 
 **How long a layout lasts.** No photo repeats while a layout is up. So a layout
 runs until it can no longer fill one of its frames with a photo that is both
@@ -170,6 +170,15 @@ identify -format "%w %h\n" contents/photos/* \
 
 Every cluster in that list wants a frame within ~18% (`fitTolerance`) of it
 somewhere in `layouts`, or those photos are dead weight.
+
+**Watch for accidental squares.** The reverse mistake is just as easy: a shape you
+own *few* of, appearing in *many* layouts. Near-square frames are the classic
+offender — they fall out of almost any tiling by accident, and if only ~25 of your
+photos are square, that handful ends up on screen several times as often as an
+ordinary portrait. Layouts 15–18 exist purely as ballast against this: they
+contain no square and no panorama frame at all, only the shapes most photos
+actually are. If you rewrite the layouts, check how many frames land in each shape
+bucket and compare that against how many photos you own of it.
 
 Then **paste `contents/ui/main.qml` into an AI assistant** (ChatGPT, Claude, …)
 and ask for layouts tuned to what you found:

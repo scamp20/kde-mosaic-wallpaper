@@ -150,6 +150,42 @@ Rectangle {
             {x:0.2344, y:0.00, w:0.1563, h:0.50}, {x:0.2344, y:0.50, w:0.1563, h:0.50},
             {x:0.3907, y:0.00, w:0.3516, h:0.72}, {x:0.3907, y:0.72, w:0.3516, h:0.28},
             {x:0.7423, y:0.00, w:0.2577, h:0.55}, {x:0.7423, y:0.55, w:0.2577, h:0.45}
+        ],
+
+        // Layouts 15-18 carry no square and no panorama frame at all - only the
+        // shapes most photos actually are (3:4 portrait, 4:3 and 3:2 landscape).
+        // Square frames are easy to produce by accident when tiling and had crept
+        // into most of the layouts above, but only ~25 photos are square, so those
+        // few were getting several times the screen time of an ordinary portrait.
+        // These give the chooser somewhere to go that serves the common shapes.
+
+        // 15 - two stacked landscapes, portraits over landscapes beside them
+        [
+            {x:0.00000, y:0.0000, w:0.41670, h:0.5000},
+            {x:0.00000, y:0.5000, w:0.41670, h:0.5000},
+            {x:0.41670, y:0.0000, w:0.29165, h:0.6222}, {x:0.70835, y:0.0000, w:0.29165, h:0.6222},
+            {x:0.41670, y:0.6222, w:0.29165, h:0.3778}, {x:0.70835, y:0.6222, w:0.29165, h:0.3778}
+        ],
+        // 16 - three portraits over a band of three 3:2 landscapes
+        [
+            {x:0.0000, y:0.00, w:0.3333, h:0.64}, {x:0.3333, y:0.00, w:0.3334, h:0.64},
+            {x:0.6667, y:0.00, w:0.3333, h:0.64},
+            {x:0.0000, y:0.64, w:0.3333, h:0.36}, {x:0.3333, y:0.64, w:0.3334, h:0.36},
+            {x:0.6667, y:0.64, w:0.3333, h:0.36}
+        ],
+        // 17 - portrait hero left, wide landscape over a row of three portraits
+        [
+            {x:0.46875, y:0.0000, w:0.53125, h:0.6375},
+            {x:0.00000, y:0.0000, w:0.46875, h:1.0000},
+            {x:0.46875, y:0.6375, w:0.17708, h:0.3625},
+            {x:0.64583, y:0.6375, w:0.17708, h:0.3625},
+            {x:0.82291, y:0.6375, w:0.17709, h:0.3625}
+        ],
+        // 18 - two mirrored portrait/3:2 columns, landscape pair on the right
+        [
+            {x:0.0000, y:0.0000, w:0.3125, h:0.6667}, {x:0.0000, y:0.6667, w:0.3125, h:0.3333},
+            {x:0.3125, y:0.0000, w:0.3125, h:0.3333}, {x:0.3125, y:0.3333, w:0.3125, h:0.6667},
+            {x:0.6250, y:0.0000, w:0.3750, h:0.5000}, {x:0.6250, y:0.5000, w:0.3750, h:0.5000}
         ]
     ]
     property int currentLayout: -1
@@ -450,14 +486,15 @@ Rectangle {
     }
 
     // How under-shown, on average, are the photos a frame of this ratio draws on.
-    // Squared: a mild preference for the hungriest barely moves the needle, while
-    // squaring measurably tightens the spread of screen time across photos.
+    // Cubed: a gentle preference for the hungriest barely moves the needle. Cubing
+    // it measurably tightens the spread of screen time across photos (a fourth
+    // power adds almost nothing further).
     function frameHunger(t) {
         var sum = 0, n = 0;
         for (var i = 0; i < infos.length; i++) {
             if (Math.abs(infos[i].r - t) / t <= fitTolerance) {
                 var q = 1 / (1 + (showCounts[infos[i].url] || 0));
-                sum += q * q;
+                sum += q * q * q;
                 n++;
             }
         }
