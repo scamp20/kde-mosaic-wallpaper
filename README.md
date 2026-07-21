@@ -12,6 +12,7 @@ into a different layout.
 - 🪶 **Lightweight** — small image decodes, no growing image cache, and on Wayland the animation pauses itself when the desktop is fully covered by a window.
 - 🔀 **Ten layouts, six photos maximum** — portrait heroes, landscape stacks, tall columns and a panorama band. Few, large frames beat many small ones.
 - 🚫 **No repeats** — within a layout, a frame works through every photo that suits it before any of them comes round again.
+- 👯 **No look-alikes side by side** — burst shots and repeated poses (photos named close together) are kept off the screen at the same time, so you don't see two near-identical shots at once.
 - ⚖️ **Even-handed** — the next layout is chosen to be *unlike* the current one, and biased towards whichever photos have had the least screen time, so the wallpaper stays fresh while every photo works its way round.
 - ⏱️ **Oldest goes first** — the photo replaced next is the one that has been up longest (weighted, so it stays unpredictable). A photo that has only just appeared is almost never snatched straight back off.
 - ✨ **Seamless re-arranges** — the next layout is built and fully decoded *off-screen* first, then crossfaded in, so you never watch empty frames pop in one by one.
@@ -93,6 +94,7 @@ Everything lives in `contents/ui/`. The common knobs are at the top of
 | How often a single photo changes | `swapMin` / `swapMax` (ms) | ~every 6 s |
 | How often the layout changes | `layoutInterval` (ms) | every 5 min |
 | When a photo counts as a fit | `fitTolerance` | `0.18` (within 18% of the frame's ratio) |
+| Keep look-alikes apart | `sequenceGap` | `5` (photos named within 5 of each other never share the screen; 0 disables) |
 | How strongly the next layout must differ | `freshnessBias` | `2.0` (0 = ignore, higher = more contrast) |
 | Disable re-arranging entirely | `property bool relayoutEnabled` | `true` |
 | The frame layouts | `property var layouts` | 10 layouts, max 6 frames each |

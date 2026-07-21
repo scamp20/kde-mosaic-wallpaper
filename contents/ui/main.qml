@@ -33,6 +33,11 @@ Rectangle {
     // a fit. This is the single knob behind both which photos a frame will draw
     // on and when a layout has run out of them - see pickPhoto.
     property real fitTolerance: 0.18
+    // Keep photos whose filename numbers are within this of each other off the
+    // screen at the same time. Names are in capture order, so this spaces out
+    // burst shots and repeated poses, which the shape-only matcher can't tell
+    // apart. 0 disables it. See pickPhoto.
+    property int sequenceGap: 5
 
     // ---- Layouts ----
     // A layout is a list of cells; a cell is a rectangle {x, y, w, h} in [0..1]
@@ -151,6 +156,15 @@ Rectangle {
     function ratioOf(url) {
         return ratios[url] || 0;
     }
+
+    // The trailing number in a filename (306 in ".../306.jpg"), or -1. The photos
+    // are named in capture order, so nearby numbers are usually the same moment -
+    // a burst, or the same pose shot several times. pickPhoto uses this to keep
+    // such near-duplicates from sharing the screen.
+    function seqOf(url) {
+        var m = /(\d+)\.[^\/.]*$/.exec(url);
+        return m ? parseInt(m[1], 10) : -1;
+    }
     property bool classified: false
 
     // Picks a photo for a frame of the given aspect ratio.
@@ -245,6 +259,30 @@ Rectangle {
         }
         if (band.length === 0)
             band = [fresh[0]];     // nothing suits it: the closest there is
+
+        // Keep near-duplicates apart. The band is chosen purely on shape, so it
+        // happily contains several frames of the same burst; without this, two of
+        // them can land on adjacent frames at once (they share a shape, after
+        // all). Drop candidates whose sequence number is close to anything already
+        // on screen, unless that would leave nothing - a real fit beats spacing.
+        if (sequenceGap > 0 && band.length > 1) {
+            var spaced = [];
+            for (i = 0; i < band.length; i++) {
+                var s = seqOf(band[i].url);
+                var clear = true;
+                for (j = 0; j < usedUrls.length; j++) {
+                    var su = seqOf(usedUrls[j]);
+                    if (s >= 0 && su >= 0 && Math.abs(s - su) < sequenceGap) {
+                        clear = false;
+                        break;
+                    }
+                }
+                if (clear)
+                    spaced.push(band[i]);
+            }
+            if (spaced.length > 0)
+                band = spaced;
+        }
 
         var url = band[Math.floor(Math.random() * band.length)].url;
         shownUrls.push(url);
